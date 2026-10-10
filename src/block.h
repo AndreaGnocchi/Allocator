@@ -5,17 +5,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/*
- * Block layout (all sizes are multiples of ALIGNMENT, size includes header):
- *
- *   allocated:  [ hdr 8 ][ payload ......................... ]
- *   free:       [ hdr 8 ][ prev 8 ][ next 8 ][ ... ][ ftr 8 ]
- *
- *   The header is 8 bytes, so for the payload (block + HDR_SIZE) to be
- *   16-byte aligned, every block must start at an address that is
- *   8 mod 16.
- */
-
 #define ALIGNMENT      16
 #define HDR_SIZE       8
 #define FTR_SIZE       8
