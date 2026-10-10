@@ -33,6 +33,10 @@ typedef struct block_t {
   struct block_t* next;
 } block_t;
 
+typedef struct {
+  block_t* head;
+} bin_t;
+
 static inline size_t align_up(size_t n) {
   return (n + (ALIGNMENT - 1)) & ~(size_t)(ALIGNMENT - 1);
 }

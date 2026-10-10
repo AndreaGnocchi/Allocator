@@ -11,9 +11,7 @@
 #define SMALL_CHUNK_SIZE  ((size_t)64 << 10)
 #define SMALL_CHUNK_HDR   sizeof(void*)
 
-typedef struct {
-  block_t* head;
-} small_bin_t;
+typedef bin_t small_bin_t;
 
 typedef struct {
   small_bin_t bins[SMALL_NUM_CLASSES];
