@@ -141,7 +141,10 @@ static inline bool _small_refill(small_heap_t* heap) {
     os_unmap_pages(base, SMALL_CHUNK_SIZE);
     return false;
   }
- 
+
+  *(void**)base = heap->chunks;
+  heap->chunks  = base;
+  
   heap->cur  = base + HDR_SIZE; // 8 mod 16
   heap->left = SMALL_CHUNK_SIZE - HDR_SIZE;
  
@@ -204,4 +207,17 @@ bool small_try_resize_in_place(void* ptr, size_t new_block_size) {
   if (sz < MIN_BLOCK_SIZE || sz > SMALL_MAX_SIZE) return false;
 
   return get_small_class(new_block_size) == get_small_class(sz);
+}
+
+void small_teardown(small_heap_t* heap) {
+  if (!heap) return;
+
+  void* chunk = heap->chunks;
+  while (chunk) {
+    void* next = *(void**)chunk;
+    os_unmap_pages(chunk, SMALL_CHUNK_SIZE);
+    chunk = next;
+  }
+
+  small_init_heap(heap);
 }
