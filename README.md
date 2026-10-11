@@ -11,7 +11,15 @@ A from-scratch malloc implementaion in C
 
 ## Status
 
-Early development. Nothing usable yet.
+Early development. The full public API is implemented (my_malloc, my_free, my_calloc, my_realloc, declared in include/allocator.h), on top of three size-based heaps: small, medium and large.
+
+Known limitations:
+
+Single-threaded: there is no locking, so it must not be called from several threads.
+No protection against double free or invalid pointers; freeing a pointer twice is undefined behavior.
+my_malloc(0) and my_calloc with a zero total size return NULL.
+Not benchmarked nor heavily tested yet.
+No build system.
 
 ## Documentation
 
