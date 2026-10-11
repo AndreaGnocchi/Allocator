@@ -26,11 +26,8 @@ size_t os_align_to_page(size_t n) {
 
 void* os_map_pages(size_t size) {
   if (size == 0) return NULL;
-  
-  size_t actual_size = os_align_to_page(size);
-  if (actual_size == 0) return NULL;
 
-  void* ptr = mmap(NULL, actual_size, PROT_READ | PROT_WRITE,
+  void* ptr = mmap(NULL, size, PROT_READ | PROT_WRITE,
                    MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   if (ptr == MAP_FAILED) return NULL;
 
@@ -40,17 +37,5 @@ void* os_map_pages(size_t size) {
 bool os_unmap_pages(void* addr, size_t size) {
   if (!addr || size == 0) return false;
 
-  size_t actual_size = os_align_to_page(size);
-  if (actual_size == 0) return false;
-
-  return munmap(addr, actual_size) == 0;
-}
-
-bool os_madvise_dontneed(void* addr, size_t size) {
-  if (!addr || size == 0) return false;
-
-  size_t actual_size = os_align_to_page(size);
-  if (actual_size == 0) return false;
-
-  return madvise(addr, actual_size, MADV_DONTNEED) == 0;
+  return munmap(addr, size) == 0;
 }

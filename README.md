@@ -15,11 +15,11 @@ Early development. The full public API is implemented (my_malloc, my_free, my_ca
 
 Known limitations:
 
-Single-threaded: there is no locking, so it must not be called from several threads.
-No protection against double free or invalid pointers; freeing a pointer twice is undefined behavior.
-my_malloc(0) and my_calloc with a zero total size return NULL.
-Not benchmarked nor heavily tested yet.
-No build system.
+- Single-threaded: there is no locking, so it must not be called from several threads.
+- No protection against double free or invalid pointers; freeing a pointer twice is undefined behavior.
+- my_malloc(0) and my_calloc with a zero total size return NULL.
+- Not benchmarked nor heavily tested yet.
+- No build system.
 
 ## Documentation
 

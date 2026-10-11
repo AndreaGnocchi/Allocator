@@ -63,13 +63,12 @@ void* my_calloc(size_t n, size_t size) {
   }
  
   size_t tot_size = n * size;
-  if (tot_size == 0) return NULL;
- 
+
   void* ptr = my_malloc(tot_size);
   if (!ptr) return NULL;
  
   size_t sz = request_to_block_size(tot_size);
-  if (sz != 0 && sz <= MEDIUM_MAX_SIZE)
+  if (sz <= MEDIUM_MAX_SIZE)
     memset(ptr, 0, tot_size);
  
   return ptr;
@@ -81,14 +80,8 @@ void* my_realloc(void* p, size_t size) {
     my_free(p);
     return NULL;
   }
-  ensure_init();
- 
-  size_t new_sz = request_to_block_size(size);
-  if (new_sz == 0) {
-    errno = ENOMEM;
-    return NULL;
-  }
- 
+
+  size_t      new_sz = request_to_block_size(size);
   size_t      old_sz = block_size(ptr_to_block(p));
   heap_kind_t kind   = heap_of_size(old_sz);
  

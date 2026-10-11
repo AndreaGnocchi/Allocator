@@ -35,10 +35,7 @@ static const uint8_t small_class_of[257] = {
 int get_small_class(size_t n) {
   if (n == 0 || n > SMALL_MAX_SIZE) return -1;
 
-  size_t idx = (n + 15) >> 4;
-  if (idx > 256) idx = 256;
-
-  return small_class_of[idx];
+  return small_class_of[(n + 15) >> 4];
 }
 
 size_t get_small_class_size(int class_idx) {
@@ -54,8 +51,6 @@ void small_init_heap(small_heap_t* heap) {
 }
 
 bool small_add_free_block(small_heap_t* heap, block_t* b, int class_idx) {
-  if (class_idx < 0 || class_idx >= SMALL_NUM_CLASSES || !b || !heap) return false;
-
   block_t* head = heap->bins[class_idx].head;
  
   if (head && head->prev != NULL) return false;
@@ -73,8 +68,6 @@ bool small_add_free_block(small_heap_t* heap, block_t* b, int class_idx) {
 
 
 bool small_remove_free_block(small_heap_t* heap, block_t* b, int class_idx) {
-  if (class_idx < 0 || class_idx >= SMALL_NUM_CLASSES || !b || !heap) return false;
- 
   block_t* prev = b->prev;
   block_t* next = b->next;
  
@@ -103,8 +96,6 @@ bool small_remove_free_block(small_heap_t* heap, block_t* b, int class_idx) {
 
 
 block_t* small_pop_free(small_heap_t* heap, int class_idx) {
-  if (!heap || class_idx < 0 || class_idx >= SMALL_NUM_CLASSES) return NULL;
-  
   block_t* b = heap->bins[class_idx].head;
   if (!b || block_is_allocated(b)) return NULL;
   if (((uintptr_t)b % ALIGNMENT) != (HDR_SIZE % ALIGNMENT) ||
@@ -152,18 +143,12 @@ static inline bool _small_refill(small_heap_t* heap) {
 }
 
 void* small_malloc(small_heap_t* heap, size_t block_size) {
-  if (!heap || block_size < MIN_BLOCK_SIZE || block_size > SMALL_MAX_SIZE) return NULL;
- 
-  int cls = get_small_class(block_size);
-  if (cls < 0) return NULL;
-  size_t sz = get_small_class_size(cls);
-  if (sz == 0) return NULL;
- 
+  int    cls = get_small_class(block_size);
+  size_t sz  = get_small_class_size(cls);
+
   block_t* b = small_pop_free(heap, cls);
   if (!b) {
     if (heap->left < sz && !_small_refill(heap)) return NULL;
- 
-    if (!heap->cur || heap->left < sz) return NULL;
  
     b = (block_t*)heap->cur;
     heap->cur  += sz;
@@ -176,16 +161,13 @@ void* small_malloc(small_heap_t* heap, size_t block_size) {
 
 
 bool small_free(small_heap_t* heap, void* ptr) {
-  if (!heap || !ptr) return false;
   if (((uintptr_t)ptr & (ALIGNMENT - 1)) != 0) return false;
 
   block_t* b = ptr_to_block(ptr);
   if (!block_is_allocated(b)) return false;
 
-  size_t sz = block_size(b);
-  if (sz < MIN_BLOCK_SIZE || sz > SMALL_MAX_SIZE) return false;
-
-  int cls = get_small_class(sz);
+  size_t sz  = block_size(b);
+  int    cls = get_small_class(sz);
   if (cls < 0 || get_small_class_size(cls) != sz) return false;
 
   bool result = small_add_free_block(heap, b, cls);
@@ -201,12 +183,9 @@ bool small_try_resize_in_place(void* ptr, size_t new_block_size) {
   if (((uintptr_t)ptr & (ALIGNMENT - 1)) != 0) return false;
 
   block_t* b = ptr_to_block(ptr);
-  if (!b || !block_is_allocated(b)) return false;
+  if (!block_is_allocated(b)) return false;
 
-  size_t sz = block_size(b);
-  if (sz < MIN_BLOCK_SIZE || sz > SMALL_MAX_SIZE) return false;
-
-  return get_small_class(new_block_size) == get_small_class(sz);
+  return get_small_class(new_block_size) == get_small_class(block_size(b));
 }
 
 void small_teardown(small_heap_t* heap) {

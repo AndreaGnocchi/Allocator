@@ -84,8 +84,6 @@ static inline block_t* block_next(const block_t* b) {
 
 // Only legal if block prev is free
 static inline block_t* block_prev(const block_t* b) {
-  if (!block_prev_is_free(b)) return NULL;
-  
   size_t prev_size = *(const size_t*)((const char*)b - FTR_SIZE);
   return (block_t*)((char*)b - prev_size);
 }
@@ -98,12 +96,6 @@ static inline block_t* ptr_to_block(void* ptr) {
  
 static inline void* block_to_ptr(block_t* b) {
   return (void*)((char*)b + HDR_SIZE);
-}
-
-// Payload
-
-static inline size_t block_payload_size(const block_t* b) {
-  return block_size(b) - HDR_SIZE;
 }
 
 #endif // BLOCK_H

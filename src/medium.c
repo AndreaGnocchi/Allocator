@@ -35,10 +35,7 @@ static const uint8_t medium_class_of[248] = {
 int get_medium_class(size_t n) {
    if (n <= MEDIUM_MIN_SIZE || n > MEDIUM_MAX_SIZE) return -1;
 
-   size_t idx = ((n + 511) >> 9) - 9;
-   if (idx > 247) idx = 247;
-
-   return medium_class_of[idx];
+   return medium_class_of[((n + 511) >> 9) - 9];
 }
 
 size_t get_medium_class_size(int class_idx) {
@@ -61,7 +58,7 @@ static inline int medium_floor_class(size_t sz) {
 }
 
 bool medium_add_free_block(medium_heap_t* heap, block_t* b, int class_idx) {
-  if (class_idx < 0 || class_idx >= MEDIUM_NUM_CLASSES || !b || !heap) return false;
+  if (class_idx < 0) return false; // medium_floor_class returns -1 for sizes < MEDIUM_MIN_BLOCK
 
   block_t* head = heap->bins[class_idx].head;
 
@@ -80,7 +77,7 @@ bool medium_add_free_block(medium_heap_t* heap, block_t* b, int class_idx) {
 }
 
 bool medium_remove_free_block(medium_heap_t* heap, block_t* b, int class_idx) {
-  if (class_idx < 0 || class_idx >= MEDIUM_NUM_CLASSES || !b || !heap) return false;
+  if (class_idx < 0) return false;
 
   block_t* prev = b->prev;
   block_t* next = b->next;
@@ -113,8 +110,6 @@ bool medium_remove_free_block(medium_heap_t* heap, block_t* b, int class_idx) {
 }
 
 block_t* medium_pop_fit(medium_heap_t* heap, int class_idx) {
-  if (!heap || class_idx < 0 || class_idx >= MEDIUM_NUM_CLASSES) return NULL;
-
   uint64_t candidates = heap->bitmap & (~(uint64_t)0 << class_idx);
   if (candidates == 0) return NULL;
 
@@ -136,10 +131,7 @@ block_t* medium_pop_fit(medium_heap_t* heap, int class_idx) {
 }
 
 block_t* medium_coalesce(medium_heap_t* heap, block_t* b) {
-  if (!heap || !b || block_is_allocated(b)) return NULL;
-
   size_t sz = block_size(b);
-  if (sz == 0) return NULL;
 
   block_t* next = block_next(b);
   if (!block_is_allocated(next)) {
@@ -166,12 +158,7 @@ block_t* medium_coalesce(medium_heap_t* heap, block_t* b) {
 }
 
 split_res_t medium_split(medium_heap_t* heap, block_t* b, size_t need) {
-  if (!heap || !b) return SPLIT_FAILED;
-
-  size_t sz = block_size(b);
- 
-  if (need < MEDIUM_MIN_BLOCK || need > sz) return SPLIT_FAILED;
- 
+  size_t sz  = block_size(b);
   size_t rem = sz - need;
   if (rem < MEDIUM_MIN_BLOCK) return SPLIT_DONTNEED;
  
@@ -216,11 +203,9 @@ static inline bool _medium_refill(medium_heap_t* heap) {
 void* medium_malloc(medium_heap_t* heap, size_t block_size_req) {
   if (!heap || block_size_req <= MEDIUM_MIN_SIZE || block_size_req > MEDIUM_MAX_SIZE) return NULL;
   
-  int cls = get_medium_class(block_size_req);
-  if (cls < 0) return NULL;
-  size_t sz = medium_class_size[cls];
-  if (sz == 0) return NULL;
- 
+  int    cls = get_medium_class(block_size_req);
+  size_t sz  = medium_class_size[cls];
+
   block_t* b = medium_pop_fit(heap, cls);
   if (!b) {
     if (!_medium_refill(heap)) return NULL;
@@ -244,14 +229,13 @@ void* medium_malloc(medium_heap_t* heap, size_t block_size_req) {
 }
 
 bool medium_free(medium_heap_t* heap, void* ptr) {
-  if (!heap || !ptr) return false;
   if (((uintptr_t)ptr & (ALIGNMENT - 1)) != 0) return false;
 
   block_t* b = ptr_to_block(ptr);
   if (!block_is_allocated(b)) return false;
 
   size_t sz = block_size(b);
-  if (sz < MEDIUM_MIN_BLOCK || sz > MEDIUM_MAX_SIZE) return false;
+  if (sz < MEDIUM_MIN_BLOCK) return false;
 
   block_set_hdr(b, sz, false, block_prev_is_free(b));
 
@@ -266,16 +250,12 @@ bool medium_try_resize_in_place(medium_heap_t* heap, void* ptr, size_t new_block
       || new_block_size > MEDIUM_MAX_SIZE) return false;
   if (((uintptr_t)ptr & (ALIGNMENT - 1)) != 0) return false;
   
-  int cls = get_medium_class(new_block_size);
-  if (cls < 0) return false;
-  size_t want = get_medium_class_size(cls);
-  if (want == 0) return false;
+  size_t want = medium_class_size[get_medium_class(new_block_size)];
 
   block_t* b = ptr_to_block(ptr);
   if (!block_is_allocated(b)) return false;
 
   size_t cur = block_size(b);
-  if (cur <= MEDIUM_MIN_SIZE || cur > MEDIUM_MAX_SIZE) return false;
 
   if (want <= cur) {
     return medium_split(heap, b, want) != SPLIT_FAILED;

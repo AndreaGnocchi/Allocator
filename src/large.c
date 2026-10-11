@@ -17,7 +17,6 @@ void* large_malloc(large_heap_t* heap, size_t size) {
   if (tot_size < size) return NULL;
 
   size_t mapped_size = os_align_to_page(tot_size);
-  if (mapped_size == 0) return NULL;
 
   char* base = os_map_pages(mapped_size);
   if (!base) return NULL;
@@ -44,7 +43,6 @@ static inline block_t* ptr_to_node(void* ptr) {
 
 
 bool large_free(large_heap_t* heap, void* ptr) {
-  if (!heap || !ptr) return false;
   if ((uintptr_t)ptr & (ALIGNMENT - 1)) return false;
 
   block_t* b    = ptr_to_block(ptr);
@@ -72,8 +70,6 @@ bool large_free(large_heap_t* heap, void* ptr) {
 }
 
 size_t large_usable_size(const void* ptr) {
-  if (!ptr) return 0;
- 
   const block_t* node = (const block_t*)((const char*)ptr - LARGE_OVERHEAD);
   return block_size(node) - LARGE_OVERHEAD;
 }
