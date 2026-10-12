@@ -11,7 +11,6 @@
 // Single-threaded for now (see docs/DESIGN.md).
 static small_heap_t  g_small;
 static medium_heap_t g_medium;
-static large_heap_t  g_large;
 static bool          g_ready = false;
 
 static inline void ensure_init(void) {
@@ -20,7 +19,6 @@ static inline void ensure_init(void) {
   os_init();
   small_init_heap(&g_small);
   medium_init_heap(&g_medium);
-  large_init_heap(&g_large);
   g_ready = true;
 
 }
@@ -49,7 +47,7 @@ void* my_malloc(size_t size) {
   } else if (sz <= MEDIUM_MAX_SIZE) {
     ptr = medium_malloc(&g_medium, sz);
   } else {
-    ptr = large_malloc(&g_large, size < LARGE_MIN_SIZE ? LARGE_MIN_SIZE : size);
+    ptr = large_malloc(size < LARGE_MIN_SIZE ? LARGE_MIN_SIZE : size);
   }
 
   if (!ptr) errno = ENOMEM;
@@ -121,6 +119,6 @@ void my_free(void* p) {
   switch (heap_of_size(sz)) {
   case HEAP_SMALL:  small_free (&g_small,  p); break;
   case HEAP_MEDIUM: medium_free(&g_medium, p); break;
-  case HEAP_LARGE:  large_free (&g_large,  p); break;
+  case HEAP_LARGE:  large_free (p); break;
   }
 }

@@ -14,12 +14,25 @@
 #define MEDIUM_NUM_CLASSES    40
 #define MEDIUM_LAST_CLASS     (MEDIUM_NUM_CLASSES - 1)
 
+/* Chunk layout (MEDIUM_CHUNK_SIZE):
+ *
+ *   [ 8 bytes reserved ]  [ block ][ block ] ...
+ *
+ * Blocks start at 8 mod 16. Free blocks are coalesced with their neighbors and
+ * kept in size-class bins (bitmap marks non-empty bins).
+ *
+ * Allocated: [ hdr 8 ][ payload ... ]
+ * Free:      [ hdr 8 ][ prev 8 ][ next 8 ] ... [ ftr 8 ]
+ *
+ * hdr = size | ALLOCATED | PREV_FREE. The ftr exists only on free blocks, so the
+ * next block's PREV_FREE flag says whether the previous block can be found.
+ */
+
 typedef bin_t medium_bin_t;
 
 typedef struct medium_heap_t {
   medium_bin_t bins[MEDIUM_NUM_CLASSES];
   uint64_t     bitmap;
-  void*        chunks;
 } medium_heap_t;
 
 typedef enum {
@@ -40,7 +53,6 @@ size_t      get_medium_class_size   (int            class_idx);
 
 // Allocation
 void*    medium_malloc             (medium_heap_t* heap, size_t block_size_req);
-void     medium_teardown           (medium_heap_t* heap);
 bool     medium_free               (medium_heap_t* heap, void*  ptr);
 bool     medium_try_resize_in_place(medium_heap_t* heap, void*  ptr , size_t new_block_size);
 

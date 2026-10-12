@@ -193,9 +193,6 @@ static inline bool _medium_refill(medium_heap_t* heap) {
     os_unmap_pages(base, MEDIUM_CHUNK_SIZE);
     return false;
   }
-
-  *(void**)base = heap->chunks;
-  heap->chunks  = base;
   
   return true;
 }
@@ -281,17 +278,4 @@ bool medium_try_resize_in_place(medium_heap_t* heap, void* ptr, size_t new_block
     
   case SPLIT_FAILED: default: return false;
   }
-}
-
-void medium_teardown(medium_heap_t* heap) {
-  if (!heap) return;
- 
-  void* chunk = heap->chunks;
-  while (chunk) {
-    void* next = *(void**)chunk;
-    os_unmap_pages(chunk, MEDIUM_CHUNK_SIZE);
-    chunk = next;
-  }
- 
-  medium_init_heap(heap);
 }

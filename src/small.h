@@ -11,13 +11,22 @@
 #define SMALL_CHUNK_SIZE  ((size_t)64 << 10)
 #define SMALL_CHUNK_HDR   sizeof(void*)
 
+/* Chunk layout (SMALL_CHUNK_SIZE):
+ *
+ *   [ 8 bytes reserved ]  [ block ][ block ] ...
+ *
+ * Blocks start at 8 mod 16 so payloads are 16-byte aligned. Fresh blocks come
+ * from a bump pointer (cur/left); freed blocks go into exact size-class bins.
+ *
+ * Block: [ hdr 8 ][ payload ... ]            (allocated)
+ *        [ hdr 8 ][ prev 8 ][ next 8 ] ...   (free, prev/next live in the payload)
+ */
 typedef bin_t small_bin_t;
 
 typedef struct {
   small_bin_t bins[SMALL_NUM_CLASSES];
   char*       cur;
   size_t      left;
-  void*       chunks;
 } small_heap_t;
 
 // Bins
@@ -28,10 +37,9 @@ bool     small_add_free_block   (small_heap_t* heap, block_t* b, int class_idx);
 bool     small_remove_free_block(small_heap_t* heap, block_t* b, int class_idx);
 int      get_small_class        (size_t        n);
 
-// Allocation.
+// Allocation
 void*    small_malloc             (small_heap_t* heap, size_t block_size);
 bool     small_free               (small_heap_t* heap, void*  ptr);
-void     small_teardown           (small_heap_t* heap);
 bool     small_try_resize_in_place(void*         ptr,  size_t new_block_size);
 
 #endif // SMALL_H
