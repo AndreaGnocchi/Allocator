@@ -2,26 +2,11 @@
 #include "block.h"
 #include "large.h"
 #include "medium.h"
-#include "os.h"
 #include "small.h"
+#include "thread_heap.h"
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
-
-// Single-threaded for now (see docs/DESIGN.md).
-static small_heap_t  g_small;
-static medium_heap_t g_medium;
-static bool          g_ready = false;
-
-static inline void ensure_init(void) {
-  if (g_ready) return;
- 
-  os_init();
-  small_init_heap(&g_small);
-  medium_init_heap(&g_medium);
-  g_ready = true;
-
-}
 
 typedef enum { HEAP_SMALL, HEAP_MEDIUM, HEAP_LARGE } heap_kind_t;
 
@@ -33,8 +18,7 @@ static inline heap_kind_t heap_of_size(size_t block_sz) {
 
 void* my_malloc(size_t size) {
   if (size == 0) return NULL;
-  ensure_init();
-
+  
   size_t sz = request_to_block_size(size);
   if (sz == 0) {
     errno = ENOMEM;
@@ -42,10 +26,19 @@ void* my_malloc(size_t size) {
   }
 
   void* ptr;
-  if (sz <= SMALL_MAX_SIZE) {
-    ptr = small_malloc(&g_small, sz);
-  } else if (sz <= MEDIUM_MAX_SIZE) {
-    ptr = medium_malloc(&g_medium, sz);
+  if (sz <= MEDIUM_MAX_SIZE) {
+    thread_heap_t* h  = get_heap();
+    if (!h) {
+      errno = ENOMEM;
+      return NULL;
+    }
+    
+    heap_drain_remote(h);
+    if (sz <= SMALL_MAX_SIZE) {
+      ptr = small_malloc(&h->small, sz);
+    } else {
+      ptr = medium_malloc(&h->medium, sz);
+    }
   } else {
     ptr = large_malloc(size < LARGE_MIN_SIZE ? LARGE_MIN_SIZE : size);
   }
@@ -90,11 +83,13 @@ void* my_realloc(void* p, size_t size) {
     if (new_sz <= SMALL_MAX_SIZE && small_try_resize_in_place(p, new_sz)) return p;
     break;
  
-  case HEAP_MEDIUM:
-    old_usable = old_sz - HDR_SIZE;
+  case HEAP_MEDIUM: {
+    old_usable          = old_sz - HDR_SIZE;
+    thread_heap_t* self = t_heap;
     if (new_sz > MEDIUM_MIN_SIZE && new_sz <= MEDIUM_MAX_SIZE &&
-        medium_try_resize_in_place(&g_medium, p, new_sz)) return p;
-    break;
+        self && chunk_of(p, MEDIUM_CHUNK_SIZE)->owner == self &&
+        medium_try_resize_in_place(&self->medium, p, new_sz)) return p;
+  } break;
  
   case HEAP_LARGE:
   default:
@@ -112,13 +107,17 @@ void* my_realloc(void* p, size_t size) {
 }
 
 void my_free(void* p) {
-  if (!p || !g_ready) return;
+  if (!p) return;
  
   size_t sz = block_size(ptr_to_block(p));
- 
-  switch (heap_of_size(sz)) {
-  case HEAP_SMALL:  small_free (&g_small,  p); break;
-  case HEAP_MEDIUM: medium_free(&g_medium, p); break;
-  case HEAP_LARGE:  large_free (p); break;
+  if (sz > MEDIUM_MAX_SIZE) {
+    large_free(p);
+    return;
   }
+  
+  size_t csz = (sz <= SMALL_MAX_SIZE) ? SMALL_CHUNK_SIZE : MEDIUM_CHUNK_SIZE;
+  thread_heap_t* owner = chunk_of(p, csz)->owner;
+  
+  if (owner == t_heap) local_free(owner, p, sz);
+  else                 remote_free(owner, p); 
 }

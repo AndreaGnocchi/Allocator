@@ -44,10 +44,11 @@ size_t get_medium_class_size(int class_idx) {
   return medium_class_size[class_idx];
 }
 
-void medium_init_heap(medium_heap_t* heap) {
+void medium_init_heap(medium_heap_t* heap, void* owner) {
   if (!heap) return;
 
   memset(heap, 0, sizeof(*heap));
+  heap->owner = owner;
 }
 
 static inline int medium_floor_class(size_t sz) {
@@ -177,8 +178,10 @@ split_res_t medium_split(medium_heap_t* heap, block_t* b, size_t need) {
 }
 
 static inline bool _medium_refill(medium_heap_t* heap) {
-  char* base = os_map_pages(MEDIUM_CHUNK_SIZE);
+  char* base = os_map_aligned(MEDIUM_CHUNK_SIZE, MEDIUM_CHUNK_SIZE);
   if (!base) return false;
+  
+  ((chunk_hdr_t*)base)->owner = heap->owner;
 
   size_t sz = MEDIUM_CHUNK_SIZE - MEDIUM_CHUNK_HDR - MEDIUM_CHUNK_SENTINEL;
 

@@ -44,10 +44,11 @@ size_t get_small_class_size(int class_idx) {
   return small_class_size[class_idx];
 }
 
-void small_init_heap(small_heap_t* heap) {
+void small_init_heap(small_heap_t* heap, void* owner) {
   if (!heap) return;
   
   memset(heap, 0, sizeof(*heap));
+  heap->owner = owner;
 }
 
 bool small_add_free_block(small_heap_t* heap, block_t* b, int class_idx) {
@@ -125,16 +126,18 @@ static inline bool _small_carve_tail(small_heap_t* heap) {
 }
 
 static inline bool _small_refill(small_heap_t* heap) {
-  char* base = os_map_pages(SMALL_CHUNK_SIZE);
+  char* base = os_map_aligned(SMALL_CHUNK_SIZE, SMALL_CHUNK_SIZE);
   if (!base) return false;
  
   if(!_small_carve_tail(heap)) {
     os_unmap_pages(base, SMALL_CHUNK_SIZE);
     return false;
   }
+
+  ((chunk_hdr_t*)base)->owner = heap->owner;
   
-  heap->cur  = base + HDR_SIZE; // 8 mod 16
-  heap->left = SMALL_CHUNK_SIZE - HDR_SIZE;
+  heap->cur  = base + SMALL_CHUNK_HDR; // 8 mod 16
+  heap->left = SMALL_CHUNK_SIZE - SMALL_CHUNK_HDR;
  
   return true;
 }

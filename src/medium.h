@@ -9,14 +9,14 @@
 #define MEDIUM_MIN_SIZE       ((size_t)4096)
 #define MEDIUM_MAX_SIZE       ((size_t)128 << 10)
 #define MEDIUM_CHUNK_SIZE     ((size_t)1 << 20)
-#define MEDIUM_CHUNK_HDR      sizeof(void*)
+#define MEDIUM_CHUNK_HDR      sizeof(chunk_hdr_t*)
 #define MEDIUM_CHUNK_SENTINEL HDR_SIZE
 #define MEDIUM_NUM_CLASSES    40
 #define MEDIUM_LAST_CLASS     (MEDIUM_NUM_CLASSES - 1)
 
 /* Chunk layout (MEDIUM_CHUNK_SIZE):
  *
- *   [ 8 bytes reserved ]  [ block ][ block ] ...
+ *   [ owner ]  [ block ][ block ] ...
  *
  * Blocks start at 8 mod 16. Free blocks are coalesced with their neighbors and
  * kept in size-class bins (bitmap marks non-empty bins).
@@ -30,9 +30,10 @@
 
 typedef bin_t medium_bin_t;
 
-typedef struct medium_heap_t {
+typedef struct {
   medium_bin_t bins[MEDIUM_NUM_CLASSES];
   uint64_t     bitmap;
+  void*        owner;
 } medium_heap_t;
 
 typedef enum {
@@ -44,7 +45,7 @@ typedef enum {
 // Bin
 block_t*    medium_pop_fit          (medium_heap_t* heap, int class_idx);
 block_t*    medium_coalesce         (medium_heap_t* heap, block_t* b);
-void        medium_init_heap        (medium_heap_t* heap);
+void        medium_init_heap        (medium_heap_t* heap, void* owner);
 split_res_t medium_split            (medium_heap_t* heap, block_t* b, size_t need);
 bool        medium_add_free_block   (medium_heap_t* heap, block_t* b, int class_idx);
 bool        medium_remove_free_block(medium_heap_t* heap, block_t* b, int class_idx);

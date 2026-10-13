@@ -26,6 +26,12 @@ typedef struct {
   block_t* head;
 } bin_t;
 
+typedef struct { void* owner; } chunk_hdr_t;
+
+static inline chunk_hdr_t* chunk_of(const void* p, size_t chunk_size) {
+  return (chunk_hdr_t*)((uintptr_t)p & ~(uintptr_t)(chunk_size - 1));
+}
+
 static inline size_t align_up(size_t n) {
   return (n + (ALIGNMENT - 1)) & ~(size_t)(ALIGNMENT - 1);
 }
