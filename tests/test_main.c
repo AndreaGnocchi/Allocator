@@ -9,6 +9,7 @@ static inline void run_all_tests(void) {
   run_all_small_test();
   run_all_medium_test();
   run_all_large_test();
+  run_all_theap_test();
 }
 
 int main(void) {
