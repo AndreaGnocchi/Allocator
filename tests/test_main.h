@@ -20,5 +20,7 @@ extern size_t test_passed;
 void run_all_block_h_tests(void);
 // os.c & os.h
 void run_all_os_test(void);
+// small.c & small.h
+void run_all_small_test(void);
 
 #endif // TEST_MAIN_H
