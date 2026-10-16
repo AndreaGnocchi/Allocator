@@ -1,14 +1,14 @@
 #include "test_main.h"
 
 size_t test_passed = 0;
+size_t test_count  = 0;
 
 static inline void run_all_tests(void) {
   run_all_block_h_tests();
+  run_all_os_test();
 }
 
 int main(void) {
-  const size_t test_count = 0; // TODO update to the right number
-  
   printf("Start Testing:\n");
   
   run_all_tests();
