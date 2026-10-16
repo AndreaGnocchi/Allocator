@@ -7,6 +7,7 @@ static inline void run_all_tests(void) {
   run_all_block_h_tests();
   run_all_os_test();
   run_all_small_test();
+  run_all_medium_test();
 }
 
 int main(void) {

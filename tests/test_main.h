@@ -22,5 +22,7 @@ void run_all_block_h_tests(void);
 void run_all_os_test(void);
 // small.c & small.h
 void run_all_small_test(void);
+// medium.c & medium.h
+void run_all_medium_test(void);
 
 #endif // TEST_MAIN_H
