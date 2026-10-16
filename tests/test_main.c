@@ -12,6 +12,7 @@ static inline void run_all_tests(void) {
   run_all_theap_test();
   run_all_malloc_test();
   run_all_calloc_test();
+  run_all_realloc_test();
 }
 
 int main(void) {
