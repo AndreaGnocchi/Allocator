@@ -44,9 +44,8 @@ $(TEST_BIN): $(TEST_SRCS) $(TEST_HDRS) $(TARGET)
 	$(CC) $(TEST_CFLAGS) $(TEST_SRCS) $(TARGET) -o $@
 
 # make test              runs the whole suite
-# make test T=medium     only runs tests whose name contains "medium"
 test: $(TEST_BIN)
-	./$(TEST_BIN) $(T)
+	./$(TEST_BIN)
 
 SAN_UB = -fsanitize=undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g
 SAN_TH = -fsanitize=thread -fno-omit-frame-pointer -g

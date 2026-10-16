@@ -28,5 +28,7 @@ void run_all_medium_test(void);
 void run_all_large_test(void);
 // thread_heap.c & thread_heap.h
 void run_all_theap_test(void);
+// allocator.c & allocator.h
+void run_all_malloc_test(void);
 
 #endif // TEST_MAIN_H
