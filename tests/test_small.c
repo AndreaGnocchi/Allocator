@@ -2,7 +2,6 @@
 #include "../src/os.h"
 #include "test_main.h"
 #include "test_util.h"
-#include <errno.h>
 #include <limits.h>
 #include <stdalign.h>
 #include <string.h>
