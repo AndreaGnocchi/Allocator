@@ -16,8 +16,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-bool   is_zero              (const void* p, size_t n);
 void   fill_pattern         (      void* p, size_t n, uint32_t seed);
+bool   is_unmapped          (      void* addr);
+bool   is_zero              (const void* p, size_t n);
 bool   check_pattern        (const void* p, size_t n, uint32_t seed);
 void   limit_address_space  (size_t      extra);
 void   unlimit_address_space(void);

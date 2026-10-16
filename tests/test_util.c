@@ -1,7 +1,11 @@
+#define _GNU_SOURCE
+
 #include "test_util.h"
 #include <stdio.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <errno.h>
+#include <sys/mman.h>
 
 bool is_zero(const void* p, size_t n) {
   const unsigned char* b = p;
@@ -50,4 +54,9 @@ void limit_address_space(size_t extra) {
  
 void unlimit_address_space(void) {
   if (saved_valid) setrlimit(RLIMIT_AS, &saved_as);
+}
+
+bool is_unmapped(void* addr) {
+  unsigned char vec[16];
+  return mincore(addr, 4096, vec) == -1 && errno == ENOMEM;
 }

@@ -24,5 +24,7 @@ void run_all_os_test(void);
 void run_all_small_test(void);
 // medium.c & medium.h
 void run_all_medium_test(void);
+// large.c & large.h
+void run_all_large_test(void);
 
 #endif // TEST_MAIN_H

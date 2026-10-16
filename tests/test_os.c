@@ -1,18 +1,9 @@
-#define _GNU_SOURCE
-
 #include "test_util.h"
 #include "test_main.h"
 #include "../src/os.h"
-#include <sys/mman.h>
 #include <unistd.h>
-#include <errno.h>
 #include <stdint.h>
 #include <string.h>
-
-static inline bool is_unmapped(void* addr) {
-  unsigned char vec[16];
-  return mincore(addr, 4096, vec) == -1 && errno == ENOMEM;
-}
 
 static inline void test_os_page_size(void) {
   os_init();
