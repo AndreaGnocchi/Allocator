@@ -24,6 +24,15 @@ typedef struct {
 
 typedef enum { KIND_SMALL, KIND_MEDIUM, KIND_LARGE } kind_t;
 
+static inline uint64_t rng_next(uint64_t* s) {
+  uint64_t x = *s;
+  x ^= x >> 12;
+  x ^= x << 25;
+  x ^= x >> 27;
+  *s = x;
+  return x * 0x2545F4914F6CDD1DULL;
+}
+
 bool   recs_disjoint        (const alloc_rec_t* recs, size_t count);
 bool   is_zero              (const void*        p,    size_t n);
 bool   check_pattern        (const void*        p,    size_t n, uint32_t seed);

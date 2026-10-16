@@ -1,9 +1,6 @@
 #include "../include/allocator.h"
-#include "../src/block.h"
-#include "../src/small.h"
 #include "test_main.h"
 #include "test_util.h"
-
 #include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
