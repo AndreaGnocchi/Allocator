@@ -26,5 +26,7 @@ void run_all_small_test(void);
 void run_all_medium_test(void);
 // large.c & large.h
 void run_all_large_test(void);
+// thread_heap.c & thread_heap.h
+void run_all_theap_test(void);
 
 #endif // TEST_MAIN_H
