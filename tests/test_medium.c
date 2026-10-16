@@ -2,7 +2,6 @@
 #include "../src/os.h"
 #include "test_main.h"
 #include "test_util.h"
-#include <errno.h>
 #include <limits.h>
 #include <stdalign.h>
 #include <stdlib.h>
@@ -111,7 +110,10 @@ static inline void test_medium_class_sizes_follow_design(void) {
 static inline void test_medium_get_class_is_tight_for_every_size(void) {
   for (size_t n = MEDIUM_MIN_SIZE + 1; n <= MEDIUM_MAX_SIZE; n++) {
     int c = get_medium_class(n);
-    if (!(c >= 0 && c < MEDIUM_NUM_CLASSES)) continue;
+    if (!(c >= 0 && c < MEDIUM_NUM_CLASSES)) {
+      CHECK(0);
+      continue;
+    }
     
     size_t sz = get_medium_class_size(c);
     CHECK(sz >= n);
