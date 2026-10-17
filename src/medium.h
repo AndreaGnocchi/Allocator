@@ -8,7 +8,7 @@
 
 #define MEDIUM_MIN_SIZE       ((size_t)4096)
 #define MEDIUM_MAX_SIZE       ((size_t)128 << 10)
-#define MEDIUM_CHUNK_SIZE     ((size_t)1 << 20)
+#define MEDIUM_CHUNK_SIZE     ((size_t)(2 << 20))
 #define MEDIUM_CHUNK_HDR      sizeof(chunk_hdr_t*)
 #define MEDIUM_CHUNK_SENTINEL HDR_SIZE
 #define MEDIUM_NUM_CLASSES    40

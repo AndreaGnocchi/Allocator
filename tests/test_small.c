@@ -289,7 +289,10 @@ static inline void test_small_chunk_refill_across_many_chunks(void) {
     CHECK(chunk_of(ptrs[i], SMALL_CHUNK_SIZE)->owner == &H);
   }
   
-  CHECK(chunks >= 5 && chunks <= 7);
+  size_t blk       = block_size(ptr_to_block(ptrs[0]));
+  size_t per_chunk = (SMALL_CHUNK_SIZE - SMALL_CHUNK_HDR) / blk;
+  size_t expected  = (N + per_chunk - 1) / per_chunk;
+  CHECK(chunks + 1 >= expected && chunks <= expected + 1);
  
   for (int i = 0; i < N; i++)
     CHECK(check_pattern(ptrs[i], 56, (uint32_t)i));
@@ -297,8 +300,10 @@ static inline void test_small_chunk_refill_across_many_chunks(void) {
 
 static inline void test_small_refill_carves_leftover_tail_into_free_blocks(void) {
   init();
-  void* first[15];
-  for (int i = 0; i < 15; i++) {
+  /* 4096-byte blocks that fit whole in a chunk; the tail is left at 4088 */
+  enum { NFULL = (SMALL_CHUNK_SIZE - SMALL_CHUNK_HDR) / 4096 };
+  void* first[NFULL];
+  for (int i = 0; i < NFULL; i++) {
     first[i] = small_malloc(&H, 4096);
     CHECK(first[i] != NULL);
   }
@@ -321,9 +326,9 @@ static inline void test_small_refill_carves_leftover_tail_into_free_blocks(void)
   CHECK(block_size(ptr_to_block(u)) == 240);
   CHECK((char*)u == (char*)t + 3840);
  
-  void* all[18];
+  void* all[NFULL + 3];
   memcpy(all, first, sizeof first);
-  all[15] = sixteenth; all[16] = t; all[17] = u;
+  all[NFULL] = sixteenth; all[NFULL + 1] = t; all[NFULL + 2] = u;
 }
 
 static inline void test_small_try_resize_in_place(void) {

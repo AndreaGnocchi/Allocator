@@ -596,25 +596,28 @@ static inline void test_medium_free_all_restores_whole_chunk(void) {
 
 static inline void test_medium_malloc_chunk_exhaustion_and_remainder_reuse(void) {
   init();
-  void* p[8];
-  for (int i = 0; i < 8; i++) {
+  /* max-size blocks that fit whole in one chunk, plus one that spills over */
+  enum { FIT = (MEDIUM_CHUNK_SIZE - MEDIUM_CHUNK_HDR - MEDIUM_CHUNK_SENTINEL) / MEDIUM_MAX_SIZE };
+  enum { NBLK = FIT + 1 };
+  void* p[NBLK];
+  for (int i = 0; i < NBLK; i++) {
     p[i] = mm(MEDIUM_MAX_SIZE);
     CHECK(p[i] != NULL);
     if (p[i])
       CHECK(block_size(ptr_to_block(p[i])) == MEDIUM_MAX_SIZE);
   }
   uintptr_t chunk1 = (uintptr_t)chunk_of(p[0], MEDIUM_CHUNK_SIZE);
-  for (int i = 0; i < 7; i++)
+  for (int i = 0; i < FIT; i++)
     CHECK((uintptr_t)chunk_of(p[i], MEDIUM_CHUNK_SIZE) == chunk1);
-  CHECK((uintptr_t)chunk_of(p[7], MEDIUM_CHUNK_SIZE) != chunk1);
- 
+  CHECK((uintptr_t)chunk_of(p[FIT], MEDIUM_CHUNK_SIZE) != chunk1);
+
   void* q = mm(120000);
   CHECK(q != NULL);
   CHECK((uintptr_t)chunk_of(q, MEDIUM_CHUNK_SIZE) == chunk1);
- 
-  void* live[9];
+
+  void* live[NBLK + 1];
   memcpy(live, p, sizeof p);
-  live[8] = q;
+  live[NBLK] = q;
 }
 
 static inline void test_medium_malloc_payload_integrity(void) {
