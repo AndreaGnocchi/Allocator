@@ -35,5 +35,7 @@ void run_all_realloc_test(void);
 void run_all_free_test(void);
 // All file
 void run_all_stress_test(void);
+// Threads
+void run_all_thread_test(void);
 
 #endif // TEST_MAIN_H

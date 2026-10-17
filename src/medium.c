@@ -158,12 +158,21 @@ block_t* medium_coalesce(medium_heap_t* heap, block_t* b) {
   return b;
 }
 
+static inline void block_set_size(block_t* b, size_t size) {
+  size_t old = atomic_load_explicit(&b->hdr, memory_order_relaxed);
+  size_t nw;
+  do {
+    nw = (size & BLOCK_SIZE_MASK) | (old & BLOCK_FLAGS_MASK);
+  } while (!atomic_compare_exchange_weak_explicit(
+               &b->hdr, &old, nw, memory_order_relaxed, memory_order_relaxed));
+}
+
 split_res_t medium_split(medium_heap_t* heap, block_t* b, size_t need) {
   size_t sz  = block_size(b);
   size_t rem = sz - need;
   if (rem < MEDIUM_MIN_BLOCK) return SPLIT_DONTNEED;
  
-  b->hdr = (need & BLOCK_SIZE_MASK) | (b->hdr & BLOCK_FLAGS_MASK); // Shirking while keeping flags
+  block_set_size(b, need); // Shirking while keeping flags
  
   block_t* r = (block_t*)((char*)b + need);
   block_set_hdr(r, rem, false, false);
@@ -270,7 +279,7 @@ bool medium_try_resize_in_place(medium_heap_t* heap, void* ptr, size_t new_block
 
   if (!medium_remove_free_block(heap, next, medium_floor_class(size_next))) return false;
   
-  b->hdr = (total & BLOCK_SIZE_MASK) | (b->hdr & BLOCK_FLAGS_MASK);
+  block_set_size(b, total); 
 
   switch (medium_split(heap, b, want)) {
   case SPLIT_SUCCESS: return true;

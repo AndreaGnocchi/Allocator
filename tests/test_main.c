@@ -15,6 +15,7 @@ static inline void run_all_tests(void) {
   run_all_realloc_test();
   run_all_free_test();
   run_all_stress_test();
+  run_all_thread_test();
 }
 
 int main(void) {

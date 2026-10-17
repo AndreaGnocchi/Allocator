@@ -1,6 +1,7 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
+#include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -17,7 +18,7 @@
 #define BLOCK_SIZE_MASK      (~BLOCK_FLAGS_MASK)
 
 typedef struct block_t {
-  size_t          hdr;
+  _Atomic size_t  hdr;
   struct block_t* prev;
   struct block_t* next;
 } block_t;
@@ -46,29 +47,33 @@ static inline size_t request_to_block_size(size_t n) {
 // HDR
 
 static inline size_t block_size(const block_t* b) {
-  return b->hdr & BLOCK_SIZE_MASK;
+  size_t val = atomic_load_explicit(&b->hdr, memory_order_relaxed);
+  return val & BLOCK_SIZE_MASK;
 }
 
 static inline bool block_is_allocated(const block_t* b) {
-  return (b->hdr & BLOCK_FLAG_ALLOCATED) != 0;
+  size_t val = atomic_load_explicit(&b->hdr, memory_order_relaxed);
+  return (val & BLOCK_FLAG_ALLOCATED) != 0;
 }
 
 static inline bool block_prev_is_free(const block_t* b) {
-  return (b->hdr & BLOCK_FLAG_PREV_FREE) != 0;
+  size_t val = atomic_load_explicit(&b->hdr, memory_order_relaxed);
+  return (val & BLOCK_FLAG_PREV_FREE) != 0;
 }
 
 static inline void block_set_hdr(block_t* b, size_t size,
                             bool allocated, bool prev_free) {
-  b->hdr = (size & BLOCK_SIZE_MASK)
-           | (allocated ? BLOCK_FLAG_ALLOCATED : 0)
-           | (prev_free ? BLOCK_FLAG_PREV_FREE : 0);
+  size_t hdr = (size & BLOCK_SIZE_MASK)
+             | (allocated ? BLOCK_FLAG_ALLOCATED : 0)
+             | (prev_free ? BLOCK_FLAG_PREV_FREE : 0);
+  atomic_store_explicit(&b->hdr, hdr, memory_order_relaxed);
 }
 
 static inline void block_set_prev_free(block_t* b, bool prev_free) {
   if (prev_free) {
-    b->hdr |= BLOCK_FLAG_PREV_FREE;
+    atomic_fetch_or_explicit(&b->hdr, BLOCK_FLAG_PREV_FREE, memory_order_relaxed);
   } else {
-    b->hdr &= (size_t)~BLOCK_FLAG_PREV_FREE;
+    atomic_fetch_and_explicit(&b->hdr, ~BLOCK_FLAG_PREV_FREE, memory_order_relaxed);
   }
 }
 
