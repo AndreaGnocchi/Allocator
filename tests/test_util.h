@@ -33,6 +33,10 @@ static inline uint64_t rng_next(uint64_t* s) {
   return x * 0x2545F4914F6CDD1DULL;
 }
 
+static inline size_t rng_range(uint64_t* s, size_t lo, size_t hi) {
+  return lo + (size_t)(rng_next(s) % (uint64_t)(hi - lo + 1));
+}
+
 bool   recs_disjoint        (const alloc_rec_t* recs, size_t count);
 bool   is_zero              (const void*        p,    size_t n);
 bool   check_pattern        (const void*        p,    size_t n, uint32_t seed);
