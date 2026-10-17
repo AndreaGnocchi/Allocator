@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: make ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [test, test-ubsan, test-tsan]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lower ASLR entropy for ThreadSanitizer
+        if: matrix.target == 'test-tsan'
+        run: sudo sysctl -w vm.mmap_rnd_bits=28 || true
+
+      - name: make ${{ matrix.target }}
+        run: make -j"$(nproc)" ${{ matrix.target }}

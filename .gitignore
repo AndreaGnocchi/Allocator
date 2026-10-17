@@ -3,3 +3,4 @@ build-ubsan/
 build-tsan/
 *.a
 *.o
+extern/
