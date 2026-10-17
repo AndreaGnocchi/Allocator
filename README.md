@@ -17,7 +17,7 @@ Known limitations:
 
 - No protection against double free or invalid pointers; freeing a pointer twice is undefined behavior.
 - my_malloc(0) and my_calloc with a zero total size return NULL.
-- Not benchmarked nor heavily tested yet.
+- Not benchmarked yet.
 
 ## Documentation
 
