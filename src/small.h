@@ -8,7 +8,7 @@
 
 #define SMALL_MAX_SIZE    4096
 #define SMALL_NUM_CLASSES 47
-#define SMALL_CHUNK_SIZE  ((size_t)64 << 10)
+#define SMALL_CHUNK_SIZE  ((size_t)256 << 10)
 #define SMALL_CHUNK_HDR   sizeof(chunk_hdr_t)
 
 /* Chunk layout (SMALL_CHUNK_SIZE):
