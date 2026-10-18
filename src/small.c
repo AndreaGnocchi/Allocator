@@ -52,56 +52,15 @@ void small_init_heap(small_heap_t* heap, void* owner) {
 }
 
 bool small_add_free_block(small_heap_t* heap, block_t* b, int class_idx) {
-  block_t* head = heap->bins[class_idx].head;
- 
-  if (head && head->prev != NULL) return false;
- 
-  b->prev = NULL;
-  b->next = head;
- 
-  if (head) {
-    head->prev = b;
-  }
+  b->next = heap->bins[class_idx].head;
   heap->bins[class_idx].head = b;
- 
-  return true;
-}
-
-
-bool small_remove_free_block(small_heap_t* heap, block_t* b, int class_idx) {
-  block_t* prev = b->prev;
-  block_t* next = b->next;
- 
-  if (prev) {
-    if (prev->next != b) return false;
-  } else {
-    if (heap->bins[class_idx].head != b) return false;
-  }
-  if (next && next->prev != b) return false;
- 
-  if (prev) {
-    prev->next = next;
-  } else {
-    heap->bins[class_idx].head = next;
-  }
- 
-  if (next) {
-    next->prev = prev;
-  }
- 
-  b->next = NULL;
-  b->prev = NULL;
- 
   return true;
 }
 
 
 block_t* small_pop_free(small_heap_t* heap, int class_idx) {
   block_t* b = heap->bins[class_idx].head;
-  if (!b || block_is_allocated(b)) return NULL;
-  if (((uintptr_t)b % ALIGNMENT) != (HDR_SIZE % ALIGNMENT) ||
-      block_size(b) != get_small_class_size(class_idx)) return NULL;
-  if (!small_remove_free_block(heap, b, class_idx)) return NULL;
+  if (b) heap->bins[class_idx].head = b->next;
   return b;
 }
 

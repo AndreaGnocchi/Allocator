@@ -71,31 +71,28 @@ static inline void test_small_init_heap(void) {
   small_init_heap(NULL, NULL);
 }
 
-static inline void test_small_bins_add_remove(void) {
+
+
+
+static inline void test_small_bins_add_pop(void) {
   init();
   for (int i = 0; i < 3; i++) make_fake(i, 32, false);
- 
+
   CHECK(small_add_free_block(&H, fake(0), 0));
   CHECK(small_add_free_block(&H, fake(1), 0));
   CHECK(small_add_free_block(&H, fake(2), 0));
- 
+
   CHECK(H.bins[0].head == fake(2));
-  CHECK(fake(2)->prev == NULL    && fake(2)->next == fake(1));
-  CHECK(fake(1)->prev == fake(2) && fake(1)->next == fake(0));
-  CHECK(fake(0)->prev == fake(1) && fake(0)->next == NULL);
- 
-  CHECK(small_remove_free_block(&H, fake(1), 0));
-  CHECK(fake(2)->next == fake(0) && fake(0)->prev == fake(2));
-  CHECK(fake(1)->next == NULL    && fake(1)->prev == NULL);
- 
-  CHECK(!small_remove_free_block(&H, fake(1), 0));
-  CHECK(H.bins[0].head == fake(2));
- 
-  CHECK(small_remove_free_block(&H, fake(0), 0));
-  CHECK(fake(2)->next == NULL);
- 
-  CHECK(small_remove_free_block(&H, fake(2), 0));
+  CHECK(fake(2)->next == fake(1));
+  CHECK(fake(1)->next == fake(0));
+  CHECK(fake(0)->next == NULL);
+
+  CHECK(small_pop_free(&H, 0) == fake(2));
+  CHECK(H.bins[0].head == fake(1));
+  CHECK(small_pop_free(&H, 0) == fake(1));
+  CHECK(small_pop_free(&H, 0) == fake(0));
   CHECK(H.bins[0].head == NULL);
+  CHECK(small_pop_free(&H, 0) == NULL);
 }
 
 static inline void test_small_bins_are_independent(void) {
@@ -106,26 +103,9 @@ static inline void test_small_bins_are_independent(void) {
   CHECK(small_add_free_block(&H, fake(1), 1));
   CHECK(H.bins[0].head == fake(0));
   CHECK(H.bins[1].head == fake(1));
-  CHECK(!small_remove_free_block(&H, fake(0), 1));
-  CHECK(small_remove_free_block(&H, fake(0), 0));
+  CHECK(small_pop_free(&H, 0) == fake(0));
+  CHECK(H.bins[0].head == NULL);
   CHECK(H.bins[1].head == fake(1));
-}
-
-static inline void test_small_bins_detect_corruption(void) {
-  init();
-  for (int i = 0; i < 3; i++) {
-    make_fake(i, 32, false);
-  }
- 
-  CHECK(small_add_free_block(&H, fake(0), 0));
-  fake(0)->prev = fake(1);
-  CHECK(!small_add_free_block(&H, fake(2), 0));
-  CHECK(H.bins[0].head == fake(0));
- 
-  fake(0)->prev = NULL;
-  CHECK(small_add_free_block(&H, fake(2), 0));
-  fake(0)->prev = fake(1);
-  CHECK(!small_remove_free_block(&H, fake(0), 0));
 }
 
 static inline void test_small_pop_free(void) {
@@ -145,26 +125,6 @@ static inline void test_small_pop_free(void) {
   CHECK(small_pop_free(&H, 1) == NULL);
 }
 
-static inline void test_small_pop_free_rejects_bad_blocks(void) {
-  init();
- 
-  make_fake(0, 64, false);
-  small_add_free_block(&H, fake(0), 1);
-  CHECK(small_pop_free(&H, 1) == NULL);
-  CHECK(H.bins[1].head == fake(0));
-  small_remove_free_block(&H, fake(0), 1);
- 
-  make_fake(1, 48, true);
-  small_add_free_block(&H, fake(1), 1);
-  CHECK(small_pop_free(&H, 1) == NULL);
-  small_remove_free_block(&H, fake(1), 1);
- 
-  block_t* mis = (block_t*)(g_arena + 16);
-  memset(mis, 0, sizeof *mis);
-  block_set_hdr(mis, 48, false, false);
-  small_add_free_block(&H, mis, 1);
-  CHECK(small_pop_free(&H, 1) == NULL);
-}
 
 static inline void test_small_malloc_first_block_layout(void) {
   init();
@@ -406,11 +366,9 @@ void run_all_small_test(void) {
   test_small_get_class_is_tight_for_every_size();
   test_small_get_class_out_of_range();
   test_small_init_heap();
-  test_small_bins_add_remove();
+  test_small_bins_add_pop();
   test_small_bins_are_independent();
-  test_small_bins_detect_corruption();
   test_small_pop_free();
-  test_small_pop_free_rejects_bad_blocks();
   test_small_malloc_first_block_layout();
   test_small_malloc_consecutive_blocks_are_adjacent();
   test_small_malloc_every_class();

@@ -8,7 +8,7 @@
 
 #define SMALL_MAX_SIZE    4096
 #define SMALL_NUM_CLASSES 47
-#define SMALL_CHUNK_SIZE  ((size_t)256 << 10)
+#define SMALL_CHUNK_SIZE  ((size_t)512 << 10)
 #define SMALL_CHUNK_HDR   sizeof(chunk_hdr_t)
 
 /* Chunk layout (SMALL_CHUNK_SIZE):
@@ -18,8 +18,8 @@
  * Blocks start at 8 mod 16 so payloads are 16-byte aligned. Fresh blocks come
  * from a bump pointer (cur/left); freed blocks go into exact size-class bins.
  *
- * Block: [ hdr 8 ][ payload ... ]            (allocated)
- *        [ hdr 8 ][ prev 8 ][ next 8 ] ...   (free, prev/next live in the payload)
+ * Block: [ hdr 8 ][ payload ... ]   (allocated)
+ *        [ hdr 8 ][ next 8 ] ...   (free, next lives in the payload)
  */
 typedef bin_t small_bin_t;
 
@@ -35,7 +35,6 @@ block_t* small_pop_free         (small_heap_t* heap, int class_idx);
 size_t   get_small_class_size   (int           class_idx);
 void     small_init_heap        (small_heap_t* heap, void* owner);
 bool     small_add_free_block   (small_heap_t* heap, block_t* b, int class_idx);
-bool     small_remove_free_block(small_heap_t* heap, block_t* b, int class_idx);
 int      get_small_class        (size_t        n);
 
 // Allocation
